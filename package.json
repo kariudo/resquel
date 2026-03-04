@@ -1,6 +1,6 @@
 {
   "name": "@kariudo/resquel",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Easily convert a SQL database into a REST API using Express.js.",
   "packageManager": "yarn@4.13.0",
   "main": "./lib/resquel.js",

@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/kariudo/resquel/compare/v1.0.0...v1.0.1) (2026-03-04)
+
+
+### Bug Fixes
+
+* **action:** semantic release ([2e45f4e](https://github.com/kariudo/resquel/commit/2e45f4eb444fdac6d86d07e68ebebfbdc3d5656c))
+
 # 1.0.0 (2026-03-04)
 
 
