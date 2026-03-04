@@ -1,8 +1,8 @@
-import request from 'supertest';
-import assert from 'assert';
-import express from 'express';
-import { Resquel, ResquelConfig } from '../src/resquel';
+import assert from 'node:assert';
 import { faker } from '@faker-js/faker';
+import express from 'express';
+import request from 'supertest';
+import { Resquel, type ResquelConfig } from '../src/resquel';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const config: ResquelConfig = require('../example/postgres.json');
@@ -26,11 +26,11 @@ describe('postgresql tests', () => {
           type = 'INDEX';
         }
 
-        route.before = (req, res, next) => {
+        route.before = (_req, _res, next) => {
           called[type].push('before');
           next();
         };
-        route.after = (req, res, next) => {
+        route.after = (_req, _res, next) => {
           called[type].push('after');
           next();
         };
@@ -116,14 +116,14 @@ describe('postgresql tests', () => {
     });
 
     it('the before handler was called first for the route', (done) => {
-      assert(called.POST instanceof Array);
+      assert(Array.isArray(called.POST));
       assert(called.POST.length >= 1);
       assert(called.POST[0] === 'before');
       done();
     });
 
     it('the after handler was called second for the route', (done) => {
-      assert(called.POST instanceof Array);
+      assert(Array.isArray(called.POST));
       assert(called.POST.length >= 2);
       assert(called.POST[1] === 'after');
       done();
@@ -148,14 +148,14 @@ describe('postgresql tests', () => {
     });
 
     it('the before handler was called first for the route', (done) => {
-      assert(called.INDEX instanceof Array);
+      assert(Array.isArray(called.INDEX));
       assert(called.INDEX.length >= 1);
       assert(called.INDEX[0] === 'before');
       done();
     });
 
     it('the after handler was called second for the route', (done) => {
-      assert(called.INDEX instanceof Array);
+      assert(Array.isArray(called.INDEX));
       assert(called.INDEX.length >= 2);
       assert(called.INDEX[1] === 'after');
       done();
@@ -165,7 +165,7 @@ describe('postgresql tests', () => {
   describe('read tests', () => {
     it('read a customer', (done) => {
       request(app)
-        .get('/customer/' + customer.id)
+        .get(`/customer/${customer.id}`)
         .expect('Content-Type', /json/)
         .expect(200)
         .end((err, res) => {
@@ -181,14 +181,14 @@ describe('postgresql tests', () => {
     });
 
     it('the before handler was called first for the route', (done) => {
-      assert(called.GET instanceof Array);
+      assert(Array.isArray(called.GET));
       assert(called.GET.length >= 1);
       assert(called.GET[0] === 'before');
       done();
     });
 
     it('the after handler was called second for the route', (done) => {
-      assert(called.GET instanceof Array);
+      assert(Array.isArray(called.GET));
       assert(called.GET.length >= 2);
       assert(called.GET[1] === 'after');
       done();
@@ -198,7 +198,7 @@ describe('postgresql tests', () => {
   describe('update tests', () => {
     it('update a customer', (done) => {
       request(app)
-        .put('/customer/' + customer.id)
+        .put(`/customer/${customer.id}`)
         .send({
           data: {
             firstName: faker.name.firstName(),
@@ -222,14 +222,14 @@ describe('postgresql tests', () => {
     });
 
     it('the before handler was called first for the route', (done) => {
-      assert(called.PUT instanceof Array);
+      assert(Array.isArray(called.PUT));
       assert(called.PUT.length >= 1);
       assert(called.PUT[0] === 'before');
       done();
     });
 
     it('the after handler was called second for the route', (done) => {
-      assert(called.PUT instanceof Array);
+      assert(Array.isArray(called.PUT));
       assert(called.PUT.length >= 2);
       assert(called.PUT[1] === 'after');
       done();
@@ -239,7 +239,7 @@ describe('postgresql tests', () => {
   describe('delete tests', () => {
     it('delete a customer', (done) => {
       request(app)
-        .delete('/customer/' + customer.id)
+        .delete(`/customer/${customer.id}`)
         .expect('Content-Type', /json/)
         .expect(200)
         .end((err, res) => {
@@ -255,14 +255,14 @@ describe('postgresql tests', () => {
     });
 
     it('the before handler was called first for the route', (done) => {
-      assert(called.DELETE instanceof Array);
+      assert(Array.isArray(called.DELETE));
       assert(called.DELETE.length >= 1);
       assert(called.DELETE[0] === 'before');
       done();
     });
 
     it('the after handler was called second for the route', (done) => {
-      assert(called.DELETE instanceof Array);
+      assert(Array.isArray(called.DELETE));
       assert(called.DELETE.length >= 2);
       assert(called.DELETE[1] === 'after');
       done();
