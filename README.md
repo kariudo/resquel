@@ -267,7 +267,7 @@ MariaDB is fully compatible with the MySQL client configuration. Simply use `cli
 
 ### Using with MySQL 8
 
-MySQL 8 introduced a new default authentication plugin (`caching_sha2_password`) which may not be compatible with older client libraries. The `mysql` package (v2.x) used by this library works best with the legacy `mysql_native_password` authentication method.
+MySQL 8 introduced a new default authentication plugin (`caching_sha2_password`) which may not be compatible with older client libraries. The underlying MySQL driver used by Knex.js works best with the legacy `mysql_native_password` authentication method.
 
 #### Option 1: Server-Side Configuration (Recommended)
 
