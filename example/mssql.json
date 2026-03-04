@@ -10,7 +10,8 @@
       }
     }
   },
-  "routes": [{
+  "routes": [
+    {
       "method": "get",
       "endpoint": "/customer",
       "query": "SELECT * FROM test.dbo.customers;"
