@@ -15,10 +15,10 @@
     "format:fix": "biome format --write .",
     "check": "biome check .",
     "check:fix": "biome check --write .",
-    "test": "yarn test:mysql; yarn test:mssql; yarn test:postgresql",
-    "test:mysql": "mocha -r ts-node/register --exit -t 20000 -b test/mysql.ts",
-    "test:mssql": "mocha -r ts-node/register --exit -t 20000 -b test/mssql.ts",
-    "test:postgresql": "mocha -r ts-node/register --exit -t 20000 -b test/postgresql.ts",
+    "test": "vitest run",
+    "test:mysql": "vitest run test/mysql.spec.ts",
+    "test:mssql": "vitest run test/mssql.spec.ts",
+    "test:postgresql": "vitest run test/postgresql.spec.ts",
     "prepare": "yarn clean:build"
   },
   "author": {
@@ -56,14 +56,13 @@
     "@types/knex": "^0.16.1",
     "@types/lodash": "^4.17.24",
     "@types/method-override": "^3.0.0",
-    "@types/mocha": "^10.0.10",
     "@types/node": "^24.0.0",
     "@types/supertest": "^7.2.0",
     "@types/uuid": "^11.0.0",
-    "mocha": "^11.7.5",
+    "@vitest/ui": "^2.1.8",
     "semantic-release": "^25.0.3",
     "supertest": "^7.2.2",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^2.1.8"
   }
 }
