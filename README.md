@@ -1,74 +1,129 @@
-Easily convert your SQL database into a REST API.
-====================================================
-This is a lightweight Express.js middleware library that is able to convert SQL databases into a REST API. This library also works
-seamlessly with the [Form.io](https://form.io) platform where you can build Angular.js and React.js applications on top of your SQL database. Please go
-to https://form.io to learn more.
+# Resquel
 
-**This library has been validated with Microsoft SQL Server, MySQL, and PostgreSQL.**
+A lightweight Express.js middleware library that converts SQL databases into REST APIs through simple route and query configuration.
 
-## How it works
-This module works by assigning routes to specific queries, which you define, that are executed when the routes are triggered. For example,
-lets say you have the following customer table.
+> **Note:** This is a maintained fork focused on modernization and continued development. Originally inspired by the Form.io SQL connector concept.
 
-**customer**
-  - *firstName*
-  - *lastName*
-  - *email*
+**Supported Databases:** Microsoft SQL Server, MySQL, and PostgreSQL
 
-This library is able to convert this into the following REST API.
+## How It Works
 
-  - **GET: /customer** - Returns a list of all customers.
-  - **GET: /customer/:id** - Returns a single customer
-  - **POST: /customer** - Creates a new customer
-  - **PUT: /customer/:id** - Updates a customer
-  - **DELETE: /customer/:id** - Deletes a customer.
+Resquel maps Express.js routes to SQL queries that execute when the routes are triggered. You define the routes, endpoints, and queries - Resquel handles the rest.
 
-Please refer to the **FULL CRUD Example** below to see how example configurations to achieve the following.
+For example, given a SQL table `customer` with fields:
 
-# How to use
-This library is pretty simple. You include it in your Express.js application like the following.
+- `firstName`
+- `lastName`
+- `email`
 
+You can create a full REST API:
+
+- **GET /customer** - List all customers
+- **GET /customer/:id** - Get a single customer
+- **POST /customer** - Create a new customer
+- **PUT /customer/:id** - Update a customer
+- **DELETE /customer/:id** - Delete a customer
+
+See the **Full CRUD Example** below for complete configuration.
+
+## Installation
+
+```bash
+npm install @kariudo/resquel
+# or
+yarn add @kariudo/resquel
 ```
-const { Resquel } = require('resquel');
+
+## Usage
+
+Include Resquel in your Express.js application:
+
+```javascript
+const { Resquel } = require('@kariudo/resquel');
 const express = require('express');
 const app = express();
 
 (async function () {
-    const resquel = new Resquel({
-      db: {
-        client: 'mysql',
-        connection: {
-          host: 'localhost',
-          database: 'formio',
-          user: 'root',
-          password: 'CHANGEME'
-        }
+  const resquel = new Resquel({
+    db: {
+      client: 'mysql',
+      connection: {
+        host: 'localhost',
+        database: 'myapp',
+        user: 'dbuser',
+        password: 'CHANGEME',
       },
-      routes: [
-        {
-          method: 'get',
-          endpoint: '/customer',
-          query: 'SELECT * FROM customers'
-        },
-        ...
-      ]
-    });
-    await resquel.init();
-    app.use(resquel.router);
+    },
+    routes: [
+      {
+        method: 'get',
+        endpoint: '/customer',
+        query: 'SELECT * FROM customers',
+      },
+      // ... more routes
+    ],
+  });
+  await resquel.init();
+  app.use(resquel.router);
 
-    // Listen to port 3010.
-    app.listen(3010);
+  // Listen to port 3010
+  app.listen(3010);
 })();
 ```
 
-## DB Configuration
-Please review [Knex documentation](http://knexjs.org/#Installation-client) for specific details on configuring the database connection. The paramaters are passed through to Knex, so all options that are valid there for your database server will work.
+## Configuration
 
+### Database Connection
 
-## Routes
-The routes definition is where you will define all of your SQL routes for this library. It is an array of routes that are each defined as follows.
+Database configuration is passed through to [Knex.js](http://knexjs.org/#Installation-client). All Knex connection options are supported. Examples:
 
+**MySQL:**
+
+```javascript
+db: {
+  client: 'mysql',
+  connection: {
+    host: 'localhost',
+    database: 'mydb',
+    user: 'dbuser',
+    password: 'password'
+  }
+}
 ```
+
+**PostgreSQL:**
+
+```javascript
+db: {
+  client: 'pg',
+  connection: {
+    host: 'localhost',
+    database: 'mydb',
+    user: 'dbuser',
+    password: 'password'
+  }
+}
+```
+
+**Microsoft SQL Server:**
+
+```javascript
+db: {
+  client: 'mssql',
+  connection: {
+    server: 'localhost',
+    database: 'mydb',
+    user: 'dbuser',
+    password: 'password'
+  }
+}
+```
+
+### Routes
+
+Routes are defined as an array of route configuration objects. Each route specifies the HTTP method, endpoint, and the SQL query to execute:
+
+```javascript
 {
   method: 'get|post|put|delete',
   endpoint: '/your/endpoint/:withParams',
@@ -76,151 +131,155 @@ The routes definition is where you will define all of your SQL routes for this l
 }
 ```
 
-### Advanced Queries
-The query property in routes can be provided in 3 forms:
-1) Simple query
-```
-query: 'SELECT * FROM customer'
-```
-This is very limited in use, and mostly provided as shorthand
+### Query Formats
 
-2) Multiple queries
-```
-query: [
-  'TRUNCATE customer',
-  'SELECT * FROM customer'
-]
-```
-When multiple queries are provided, only the return response from the last query appears in the reply
+Queries can be provided in three forms:
 
-3) Prepared queries
+#### 1. Simple Query
+
+```javascript
+query: 'SELECT * FROM customer';
 ```
+
+Basic string query. Limited in functionality but useful for simple reads.
+
+#### 2. Multiple Queries
+
+```javascript
+query: ['TRUNCATE customer', 'SELECT * FROM customer'];
+```
+
+Executes queries in sequence. Only the last query's result is returned in the response.
+
+#### 3. Prepared Queries (Recommended)
+
+```javascript
 query: [
   [
     'UPDATE customer SET firstName=?, lastName=?, email=? WHERE id=?',
     'body.firstName',
     'body.lastName',
     'body.email',
-    'params.id'
+    'params.id',
   ],
-  [
-    'SELECT * FROM customer id=?',
-    'params.id'
-  ]
-]
+  ['SELECT * FROM customer WHERE id=?', 'params.id'],
+];
 ```
 
-This is the true intended way to use the library. In the inner arrays, the first item **MUST** be the query. All subsequent items are substitution values for the `?` in the query in the format of object paths on the `req` object. All properties are accessible, including (but not limited to): `headers`, `params`, `query`, `body`.
+Prepared queries use parameter binding for security. The first element in each inner array is the SQL query with `?` placeholders. Subsequent elements are object paths on the Express `req` object (e.g., `params`, `body`, `query`, `headers`).
 
-If not all values required by the prepared query are available, then an error will be emitted and execution of queries on that route will be halted (if there are followup queries present).
+If required parameters are missing, an error is returned and execution halts.
 
-**Note:** When using prepared queries, mixing in shorthand style queries will result in an error. Invalid example:
-```
+**Note:** When using prepared queries, all queries in the route must use the prepared format. Mixing formats will result in an error.
+
+**Invalid Example:**
+
+```javascript
 query: [
-  [
-    'DELETE FROM customer WHERE id=?',
-    'params.customerId'
-  ],
-  'SELECT COUNT(*) AS num FROM customer'
-]
+  ['DELETE FROM customer WHERE id=?', 'params.customerId'],
+  'SELECT COUNT(*) AS num FROM customer', // ❌ Cannot mix formats
+];
 ```
 
-### Full CRUD example
-Let's suppose that you have a SQL table called "customers" that have the following fields.
+### Full CRUD Example
 
- - First Name (firstName)
- - Last Name (lastName)
- - Email (email)
+Complete REST API for a `customers` table with fields: `firstName`, `lastName`, `email`
 
-The following configuration would generate a full CRUD REST API for this SQL Table.
-
-```
-const { Resquel } = require('resquel');
+```javascript
+const { Resquel } = require('@kariudo/resquel');
 const express = require('express');
 const app = express();
+
 (async function () {
-    const resquel = new Resquel({
-        db: {
-            client: process.env.DB_TYPE,
-            connection: {
-                host: process.env.DB_HOST,
-                database: process.env.DB_NAME,
-                user: process.env.DB_USER,
-                password: process.env.DB_PASS
-            },
-        },
-        routes: [
-            {
-              method: 'get',
-              endpoint: '/customer',
-              query: 'SELECT * FROM customers'
-            },
-            {
-              method: 'post',
-              endpoint: '/customer',
-              query: [
-                [
-                  'INSERT INTO customers (firstname, lastName, email) VALUES (?, ?, ?, ?)',
-                  'body.data.firstName',
-                  'body.data.lastName',
-                  'body.data.email'
-                ],
-                [
-                  'SELECT * FROM customers WHERE id=LAST_INSERT_ID();'
-                ]
-              ]
-            },
-            {
-              method: 'get',
-              endpoint: '/customer/:id',
-              query: [
-                'SELECT * FROM customers WHERE id=?',
-                'params.id'
-              ]
-            },
-            {
-              method: 'put',
-              endpoint: '/customer/:id',
-              query: [
-                [
-                  'UPDATE customers SET firstName=?, lastName=?, email=? WHERE id=?',
-                  'body.data.firstName',
-                  'body.data.lastName',
-                  'body.data.email',
-                  'params.id'
-                ],
-                [
-                  'SELECT * FROM customers WHERE id=?',
-                  'params.id'
-                ]
-              ]
-            },
-            {
-              method: 'delete',
-              endpoint: '/customer/:id',
-              query: [
-                'DELETE FROM customers WHERE id=?',
-                'params.id'
-              ]
-            }
-        ]
-    });
-    await resquel.init();
-    app.use(resquel.router);
-    app.listen(3010);
+  const resquel = new Resquel({
+    db: {
+      client: process.env.DB_TYPE,
+      connection: {
+        host: process.env.DB_HOST,
+        database: process.env.DB_NAME,
+        user: process.env.DB_USER,
+        password: process.env.DB_PASS,
+      },
+    },
+    routes: [
+      // List all customers
+      {
+        method: 'get',
+        endpoint: '/customer',
+        query: 'SELECT * FROM customers',
+      },
+      // Create a customer
+      {
+        method: 'post',
+        endpoint: '/customer',
+        query: [
+          [
+            'INSERT INTO customers (firstName, lastName, email) VALUES (?, ?, ?)',
+            'body.data.firstName',
+            'body.data.lastName',
+            'body.data.email',
+          ],
+          'SELECT * FROM customers WHERE id=LAST_INSERT_ID()',
+        ],
+      },
+      // Get a single customer
+      {
+        method: 'get',
+        endpoint: '/customer/:id',
+        query: [['SELECT * FROM customers WHERE id=?', 'params.id']],
+      },
+      // Update a customer
+      {
+        method: 'put',
+        endpoint: '/customer/:id',
+        query: [
+          [
+            'UPDATE customers SET firstName=?, lastName=?, email=? WHERE id=?',
+            'body.data.firstName',
+            'body.data.lastName',
+            'body.data.email',
+            'params.id',
+          ],
+          ['SELECT * FROM customers WHERE id=?', 'params.id'],
+        ],
+      },
+      // Delete a customer
+      {
+        method: 'delete',
+        endpoint: '/customer/:id',
+        query: [['DELETE FROM customers WHERE id=?', 'params.id']],
+      },
+    ],
+  });
+  await resquel.init();
+  app.use(resquel.router);
+  app.listen(3010);
 })();
 ```
 
-### Troubleshooting
-#### Using with MySQL 8
-With the latest version of MySQL 8, you will need to ensure that the "root" user is able to login with the password provider. Otherwise you will get an error. If you are using this library with MySQL 8, please make sure you run the following query within your database to ensure that you are able to authenticate properly.
+## Troubleshooting
 
-```
+### Using with MySQL 8
+
+MySQL 8 requires explicit password authentication configuration. Run these queries in your database to enable password authentication:
+
+```sql
 ALTER USER 'root'@'%' IDENTIFIED WITH mysql_native_password BY 'YourRootPassword';
 ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'YourRootPassword';
 ```
 
------
-Enjoy!
+## Examples
 
- - The Form.io Team
+See the [example/](example/) directory for working configurations with Docker Compose setups for:
+
+- MySQL
+- PostgreSQL
+- Microsoft SQL Server
+
+## License
+
+GPL-3.0 - see [LICENSE.md](LICENSE.md)
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
