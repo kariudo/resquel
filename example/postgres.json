@@ -1,12 +1,10 @@
 {
+  "type": "postgresql",
   "db": {
-    "client": "postgresql",
-    "connection": {
-      "host": "localhost",
-      "user": "postgres",
-      "password": "postgres",
-      "database": "postgres"
-    }
+    "user": "postgres",
+    "password": "postgres",
+    "server": "localhost",
+    "database": "postgres"
   },
   "routes": [
     {
@@ -17,36 +15,22 @@
     {
       "method": "post",
       "endpoint": "/customer",
-      "query": [
-        "INSERT INTO customers (firstName, lastName, email) VALUES (?, ?, ?) RETURNING *;",
-        "body.data.firstName",
-        "body.data.lastName",
-        "body.data.email"
-      ]
+      "query": "INSERT INTO customers (firstName, lastName, email) VALUES ('{{ body.data.firstName }}', '{{ body.data.lastName }}', '{{ body.data.email }}') RETURNING *;"
     },
     {
       "method": "get",
       "endpoint": "/customer/:id",
-      "query": ["SELECT * FROM customers WHERE id=?", "params.id"]
+      "query": "SELECT * FROM customers WHERE id={{ params.id }}"
     },
     {
       "method": "put",
       "endpoint": "/customer/:id",
-      "query": [
-        [
-          "UPDATE customers SET firstName=?, lastName=?, email=? WHERE id=? RETURNING *",
-          "body.data.firstName",
-          "body.data.lastName",
-          "body.data.email",
-          "params.customerId"
-        ],
-        ["SELECT * FROM customers WHERE id=?", "params.id"]
-      ]
+      "query": "UPDATE customers SET firstName='{{ body.data.firstName }}', lastName='{{ body.data.lastName }}', email='{{ body.data.email }}' WHERE id={{ params.id }} RETURNING *"
     },
     {
       "method": "delete",
       "endpoint": "/customer/:id",
-      "query": ["DELETE FROM customers WHERE id=?", "params.id"]
+      "query": "DELETE FROM customers WHERE id={{ params.id }}"
     }
   ]
 }

@@ -1,13 +1,13 @@
 {
+  "type": "mssql",
   "db": {
-    "client": "mssql",
-    "connection": {
-      "host": "localhost",
-      "user": "sa",
-      "password": "yourStrong(!)Password",
-      "options": {
-        "enableArithAbort": true
-      }
+    "user": "sa",
+    "password": "yourStrong(!)Password",
+    "server": "localhost",
+    "database": "test",
+    "requestTimeout": "30000",
+    "options": {
+      "enableArithAbort": true
     }
   },
   "routes": [
@@ -19,36 +19,22 @@
     {
       "method": "post",
       "endpoint": "/customer",
-      "query": [
-        "INSERT INTO customers (firstName, lastName, email) VALUES (?, ?, ?); SELECT * FROM customers WHERE id=SCOPE_IDENTITY();",
-        "body.data.firstName",
-        "body.data.lastName",
-        "body.data.email"
-      ]
+      "query": "INSERT INTO customers (firstName, lastName, email) VALUES ('{{ body.data.firstName }}', '{{ body.data.lastName }}', '{{ body.data.email }}'); SELECT * FROM customers WHERE id=SCOPE_IDENTITY();"
     },
     {
       "method": "get",
       "endpoint": "/customer/:id",
-      "query": ["SELECT * FROM test.dbo.customers WHERE id=?", "params.id"]
+      "query": "SELECT * FROM test.dbo.customers WHERE id={{ params.id }}"
     },
     {
       "method": "put",
       "endpoint": "/customer/:id",
-      "query": [
-        [
-          "UPDATE test.dbo.customers SET firstName='?', lastName='?', email='?' WHERE id=?",
-          "body.data.firstName",
-          "body.data.lastName",
-          "body.data.email",
-          "params.id"
-        ],
-        ["SELECT * FROM test.dbo.customers WHERE id=?", "params.id"]
-      ]
+      "query": "UPDATE test.dbo.customers SET firstName='{{ body.data.firstName }}', lastName='{{ body.data.lastName }}', email='{{ body.data.email }}' WHERE id={{ params.id }}; SELECT * FROM test.dbo.customers WHERE id={{ params.id }}"
     },
     {
       "method": "delete",
       "endpoint": "/customer/:id",
-      "query": ["DELETE FROM test.dbo.customers WHERE id=?", "params.id"]
+      "query": "DELETE FROM test.dbo.customers WHERE id={{ params.id }}"
     }
   ]
 }

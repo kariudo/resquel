@@ -6,13 +6,23 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
     "target": "es2017",
     "sourceMap": true,
     "outDir": "./lib",
     "baseUrl": "./src",
-    "types": ["node", "mocha"],
+    "types": [
+      "node",
+      "vitest/globals"
+    ],
     "incremental": true
   },
-  "include": ["src", "test"],
-  "exclude": ["lib"]
+  "include": [
+    "src",
+    "test"
+  ],
+  "exclude": [
+    "lib"
+  ]
 }
