@@ -12,10 +12,12 @@ import type {
   ConfigRouteQuery,
   ConnectionType,
   ErrorResponse,
+  FlatResquelConfig,
   PreparedQuery,
   QueryParamLookup,
   ResquelAuth,
   ResquelConfig,
+  ResquelConfigNormalized,
 } from './types';
 
 import { ErrorCodes } from './types';
@@ -35,11 +37,14 @@ const logger: {
 export class Resquel {
   public knexClient: Knex;
   public readonly router: express.Router = express.Router();
+  private normalizedConfig: ResquelConfigNormalized;
 
-  constructor(private resquelConfig: ResquelConfig) { }
+  constructor(resquelConfig: ResquelConfig) {
+    this.normalizedConfig = this.normalizeConfig(resquelConfig);
+  }
 
   public async init() {
-    const config = this.resquelConfig || ({} as ResquelConfig);
+    const config = this.normalizedConfig || ({} as ResquelConfigNormalized);
     logger.info(`routerSetup`);
     this.routerSetup(config.auth);
 
@@ -73,11 +78,11 @@ export class Resquel {
   }
 
   protected createKnexConnections() {
-    this.knexClient = knex(this.resquelConfig.db);
+    this.knexClient = knex(this.normalizedConfig.db);
   }
 
   protected loadRoutes() {
-    this.resquelConfig.routes.forEach((route, idx) => {
+    this.normalizedConfig.routes.forEach((route, idx) => {
       const method = route.method.toLowerCase() as 'get' | 'post' | 'put' | 'delete';
       logger.info(`${idx}) Register Route: ${route.method} ${route.endpoint}`);
       logger.debug(route);
@@ -258,6 +263,85 @@ export class Resquel {
     if (auth) {
       router.use(basicAuth(auth.username, auth.password));
     }
+  }
+
+  protected normalizeConfig(config: ResquelConfig): ResquelConfigNormalized {
+    if (this.isFlatConfig(config)) {
+      const { server, requestTimeout, ...connectionRemainder } = config.db;
+      const connection: Record<string, unknown> = {
+        ...connectionRemainder,
+        host: server,
+      };
+
+      if (requestTimeout !== undefined) {
+        connection.requestTimeout = Number(requestTimeout);
+      }
+
+      return {
+        port: config.port,
+        auth: config.auth,
+        db: {
+          client: config.type,
+          connection,
+        },
+        routes: config.routes.map((route) => ({
+          ...route,
+          query: this.normalizeRouteQuery(route.query),
+        })),
+      };
+    }
+
+    return {
+      port: config.port,
+      auth: config.auth,
+      db: config.db,
+      routes: config.routes.map((route) => ({
+        ...route,
+        query: this.normalizeRouteQuery(route.query),
+      })),
+    };
+  }
+
+  protected isFlatConfig(config: ResquelConfig): config is FlatResquelConfig {
+    return (
+      (config as FlatResquelConfig).type !== undefined &&
+      !(config as { db?: { client?: string } }).db?.client
+    );
+  }
+
+  protected normalizeRouteQuery(routeQuery: ConfigRouteQuery): ConfigRouteQuery {
+    if (typeof routeQuery === 'string') {
+      return this.convertTemplatedQuery(routeQuery);
+    }
+
+    if (typeof routeQuery[0] === 'string') {
+      const preparedQuery = routeQuery as PreparedQuery;
+      if (preparedQuery.length === 1) {
+        return this.convertTemplatedQuery(preparedQuery[0]);
+      }
+      return preparedQuery;
+    }
+
+    return (routeQuery as PreparedQuery[]).map((preparedQuery) => {
+      if (preparedQuery.length === 1) {
+        return this.convertTemplatedQuery(preparedQuery[0]) as PreparedQuery;
+      }
+      return preparedQuery;
+    });
+  }
+
+  protected convertTemplatedQuery(queryString: string): ConfigRouteQuery {
+    const params: string[] = [];
+    const preparedQueryString = queryString.replace(/\{\{\s*([^}]+?)\s*\}\}/g, (_match, path) => {
+      params.push((path as string).trim());
+      return '?';
+    });
+
+    if (params.length === 0) {
+      return queryString;
+    }
+
+    return [preparedQueryString, ...params] as PreparedQuery;
   }
 }
 export default Resquel;

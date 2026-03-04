@@ -43,7 +43,33 @@ export type ResquelAuth = {
   password: string;
 };
 
-export type ResquelConfig = {
+export type FlatDbConfig = {
+  user: string;
+  password: string;
+  server: string;
+  database?: string;
+  requestTimeout?: string | number;
+  [key: string]: unknown;
+};
+
+export type LegacyResquelConfig = {
+  port?: number;
+  db: Knex.Config<unknown>;
+  routes: ConfigRoute[];
+  auth?: ResquelAuth;
+};
+
+export type FlatResquelConfig = {
+  port?: number;
+  type: ConnectionType;
+  db: FlatDbConfig;
+  routes: ConfigRoute[];
+  auth?: ResquelAuth;
+};
+
+export type ResquelConfig = LegacyResquelConfig | FlatResquelConfig;
+
+export type ResquelConfigNormalized = {
   port?: number;
   db: Knex.Config<unknown>;
   routes: ConfigRoute[];
