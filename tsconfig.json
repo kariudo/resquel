@@ -12,17 +12,9 @@
     "sourceMap": true,
     "outDir": "./lib",
     "baseUrl": "./src",
-    "types": [
-      "node",
-      "vitest/globals"
-    ],
+    "types": ["node", "vitest/globals"],
     "incremental": true
   },
-  "include": [
-    "src",
-    "test"
-  ],
-  "exclude": [
-    "lib"
-  ]
+  "include": ["src", "test"],
+  "exclude": ["lib"]
 }

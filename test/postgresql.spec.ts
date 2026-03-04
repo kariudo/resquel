@@ -1,9 +1,9 @@
-import { expect, describe, it, beforeAll, afterAll } from 'vitest';
 import { faker } from '@faker-js/faker';
 import express from 'express';
 import request from 'supertest';
-import { Resquel, type ResquelConfig } from '../src';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import postgresConfig from '../example/postgres.json';
+import { Resquel, type ResquelConfig } from '../src';
 
 const config: ResquelConfig = postgresConfig;
 
@@ -76,15 +76,15 @@ describe('postgresql tests', () => {
     it('create the customers table', async () => {
       await resquel.knexClient.raw(
         'CREATE TABLE customers' +
-        '(' +
-        'id serial,' +
-        'firstName text,' +
-        'lastName text,' +
-        'email text,' +
-        'PRIMARY KEY ("id"),' +
-        'UNIQUE ("id")' +
-        ')' +
-        'TABLESPACE "pg_default";',
+          '(' +
+          'id serial,' +
+          'firstName text,' +
+          'lastName text,' +
+          'email text,' +
+          'PRIMARY KEY ("id"),' +
+          'UNIQUE ("id")' +
+          ')' +
+          'TABLESPACE "pg_default";',
       );
     });
   });
@@ -124,10 +124,7 @@ describe('postgresql tests', () => {
 
   describe('index tests', () => {
     it('read the index of all customers', async () => {
-      const res = await request(app)
-        .get('/customer')
-        .expect('Content-Type', /json/)
-        .expect(200);
+      const res = await request(app).get('/customer').expect('Content-Type', /json/).expect(200);
 
       const response = res.body;
       expect(response.rows).toHaveLength(1);
@@ -228,10 +225,7 @@ describe('postgresql tests', () => {
     });
 
     it('no customers exist after deleting them all', async () => {
-      const res = await request(app)
-        .get('/customer')
-        .expect('Content-Type', /json/)
-        .expect(200);
+      const res = await request(app).get('/customer').expect('Content-Type', /json/).expect(200);
 
       const response = res.body;
       expect(response.rows).toHaveLength(0);

@@ -1,9 +1,9 @@
-import { expect, describe, it, beforeAll, afterAll } from 'vitest';
 import { faker } from '@faker-js/faker';
 import express from 'express';
 import request from 'supertest';
-import { Resquel, type ResquelConfig } from '../src';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import mysqlConfig from '../example/mysql.json';
+import { Resquel, type ResquelConfig } from '../src';
 
 const config: ResquelConfig = mysqlConfig;
 const app = express();
@@ -61,12 +61,12 @@ describe('mysql tests', () => {
     it('create the test table', async () => {
       await resquel.knexClient.raw(
         'CREATE TABLE `customers` (' +
-        '`id` int(16) unsigned NOT NULL AUTO_INCREMENT,' +
-        '`firstName` varchar(256) COLLATE latin1_general_ci DEFAULT NULL,' +
-        '`lastName` varchar(256) COLLATE latin1_general_ci DEFAULT NULL,' +
-        '`email` varchar(256) COLLATE latin1_general_ci DEFAULT NULL,' +
-        'PRIMARY KEY (`id`)' +
-        ') ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci',
+          '`id` int(16) unsigned NOT NULL AUTO_INCREMENT,' +
+          '`firstName` varchar(256) COLLATE latin1_general_ci DEFAULT NULL,' +
+          '`lastName` varchar(256) COLLATE latin1_general_ci DEFAULT NULL,' +
+          '`email` varchar(256) COLLATE latin1_general_ci DEFAULT NULL,' +
+          'PRIMARY KEY (`id`)' +
+          ') ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci',
       );
     });
   });
@@ -105,10 +105,7 @@ describe('mysql tests', () => {
 
   describe('index tests', () => {
     it('read the index of all customers', async () => {
-      const res = await request(app)
-        .get('/customer')
-        .expect('Content-Type', /json/)
-        .expect(200);
+      const res = await request(app).get('/customer').expect('Content-Type', /json/).expect(200);
 
       const response = res.body;
       expect(response.rows).toHaveLength(1);
@@ -209,10 +206,7 @@ describe('mysql tests', () => {
     });
 
     it('no customers exist after deleting them all', async () => {
-      const res = await request(app)
-        .get('/customer')
-        .expect('Content-Type', /json/)
-        .expect(200);
+      const res = await request(app).get('/customer').expect('Content-Type', /json/).expect(200);
 
       const response = res.body;
       expect(response.rows).toHaveLength(0);

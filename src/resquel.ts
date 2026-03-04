@@ -201,7 +201,9 @@ export class Resquel {
         logger.error('QUERY FAILED');
         logger.error({
           queryString,
-          params: params.map(p => typeof p === 'string' && p.length > 50 ? `${p.substring(0, 50)}...` : p),
+          params: params.map((p) =>
+            typeof p === 'string' && p.length > 50 ? `${p.substring(0, 50)}...` : p,
+          ),
           result,
         });
         logger.error(err);
