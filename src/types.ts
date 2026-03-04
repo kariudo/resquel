@@ -1,6 +1,5 @@
 import type { Request, Response } from 'express';
 import type { Knex } from 'knex';
-import type Resquel from 'resquel';
 
 export type ConnectionType = 'mssql' | 'mysql' | 'postgresql' | string;
 
@@ -12,7 +11,8 @@ export type ConfigRouteQuery = string | PreparedQuery | PreparedQuery[];
 
 export type QueryParam = {
   knex: Knex;
-  resquel: Resquel;
+  // biome-ignore lint/suspicious/noExplicitAny: Resquel instance, avoiding circular type reference
+  resquel: any;
   req: Request;
   res: Response;
 };
