@@ -1,21 +1,35 @@
 {
-  "name": "resquel",
-  "version": "2.1.0-rc.2",
+  "name": "@kariudo/resquel",
+  "version": "2.2.0",
   "description": "Easily convert a SQL database into a REST API using Express.js.",
+  "packageManager": "yarn@4.13.0",
   "main": "./lib/resquel.js",
   "types": "./lib/resquel.d.ts",
   "scripts": {
     "clean": "rm -rf ./lib",
     "clean:build": "yarn clean; yarn build",
     "build": "tsc -p tsconfig-build.json",
+    "lint": "biome lint .",
+    "lint:fix": "biome lint --write .",
+    "format": "biome format .",
+    "format:fix": "biome format --write .",
+    "check": "biome check .",
+    "check:fix": "biome check --write .",
     "test": "yarn test:mysql; yarn test:mssql; yarn test:postgresql",
     "test:mysql": "mocha -r ts-node/register --exit -t 20000 -b test/mysql.ts",
     "test:mssql": "mocha -r ts-node/register --exit -t 20000 -b test/mssql.ts",
     "test:postgresql": "mocha -r ts-node/register --exit -t 20000 -b test/postgresql.ts",
     "prepare": "yarn clean:build"
   },
-  "author": "form.io",
-  "license": "ISC",
+  "author": {
+    "name": "Hunter Horsman",
+    "email": "hhorsman@square-9.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kariudo/resquel.git"
+  },
+  "license": "GPL-3.0",
   "dependencies": {
     "basic-auth-connect": "^1.0.0",
     "body-parser": "^1.15.0",
@@ -27,11 +41,17 @@
     "mssql": "^9.1.1",
     "mysql": "^2.18.1",
     "pg": "^8.10.0",
-    "prettier": "^2.8.7",
     "uuid": "^9.0.0"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.4.5",
     "@faker-js/faker": "^7.6.0",
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/commit-analyzer": "^13.0.1",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^12.0.6",
+    "@semantic-release/npm": "^13.1.5",
+    "@semantic-release/release-notes-generator": "^14.1.0",
     "@types/body-parser": "^1.19.0",
     "@types/debug": "^4.1.5",
     "@types/express": "^4.17.17",
@@ -46,11 +66,8 @@
     "@types/pg": "^8.6.6",
     "@types/supertest": "^2.0.10",
     "@types/uuid": "^9.0.1",
-    "@typescript-eslint/eslint-plugin": "^5.57.1",
-    "@typescript-eslint/parser": "^5.57.1",
-    "eslint": "^8.37.0",
-    "eslint-config-prettier": "^8.8.0",
     "mocha": "^10.2.0",
+    "semantic-release": "^25.0.3",
     "supertest": "^6.3.3",
     "ts-node": "^10.9.1",
     "typescript": "^5.0.3"
