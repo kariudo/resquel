@@ -12,9 +12,7 @@
     {
       "method": "get",
       "endpoint": "/customer",
-      "query": [
-        ["SELECT * FROM customers;"]
-      ]
+      "query": [["SELECT * FROM customers;"]]
     },
     {
       "method": "post",
@@ -26,9 +24,7 @@
           "body.data.lastName",
           "body.data.email"
         ],
-        [
-          "SELECT * FROM customers WHERE id=LAST_INSERT_ID();"
-        ]
+        ["SELECT * FROM customers WHERE id=LAST_INSERT_ID();"]
       ]
     },
     {
