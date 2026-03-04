@@ -261,18 +261,46 @@ const app = express();
 
 ### Using with MySQL 8
 
-MySQL 8 requires explicit password authentication configuration. Run these queries in your database to enable password authentication:
+MySQL 8 introduced a new default authentication plugin (`caching_sha2_password`) which may not be compatible with older client libraries. The `mysql` package (v2.x) used by this library works best with the legacy `mysql_native_password` authentication method.
+
+#### Option 1: Server-Side Configuration (Recommended)
+
+Configure your MySQL users to use the legacy authentication plugin:
 
 ```sql
 ALTER USER 'root'@'%' IDENTIFIED WITH mysql_native_password BY 'YourRootPassword';
 ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'YourRootPassword';
 ```
 
+#### Option 2: Client-Side Configuration
+
+If you need to connect to a MySQL 8 server with the new authentication method, you can configure the connection to handle it. Add these options to your database configuration:
+
+```javascript
+db: {
+  client: 'mysql',
+  connection: {
+    host: 'localhost',
+    database: 'mydb',
+    user: 'dbuser',
+    password: 'password',
+    // Enable legacy authentication support
+    insecureAuth: true,
+    // Optional: Set charset for compatibility
+    charset: 'utf8mb4',
+    // Optional: Set timezone
+    timezone: 'UTC'
+  }
+}
+```
+
+**Note:** The `insecureAuth` option enables compatibility with older authentication methods. While functional, the server-side configuration (Option 1) is more secure and recommended for production environments.
+
 ## Examples
 
 See the [example/](example/) directory for working configurations with Docker Compose setups for:
 
-- MySQL
+- MySQL (including MySQL 8 with legacy authentication)
 - PostgreSQL
 - Microsoft SQL Server
 
