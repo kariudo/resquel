@@ -1,60 +1,30 @@
 import basicAuth from 'basic-auth-connect';
 import bodyParser from 'body-parser';
+import debug from 'debug';
 import type { NextFunction, Request, Response } from 'express';
 import express from 'express';
 import knex, { type Knex } from 'knex';
 import _, { type AnyKindOfDictionary } from 'lodash';
 import methodOverride from 'method-override';
 import { v4 as uuid } from 'uuid';
-import logger from './log';
 
-const { log, warn, debug, error } = logger('resquel');
+import type {
+  ConfigRouteQuery,
+  ConnectionType,
+  ErrorResponse,
+  PreparedQuery,
+  QueryParamLookup,
+  ResquelAuth,
+  ResquelConfig,
+} from './types';
 
-export declare type ConnectionType = 'mssql' | 'mysql' | 'postgresql' | string;
+import { ErrorCodes } from './types';
 
-export declare type ConfigRouteMethods = 'get' | 'post' | 'put' | 'delete' | 'index' | string;
-
-export declare type PreparedQuery = [string, ...(string | QueryParamLookup)[]];
-
-type ConfigRouteQuery = string | PreparedQuery | PreparedQuery[];
-
-export declare type QueryParam = {
-  knex: Knex;
-  resquel: Resquel;
-  req: Request;
-  res: Response;
-};
-export declare type QueryParamLookup = (param: QueryParam) => Promise<string>;
-
-export declare type ConfigRoute = {
-  method: ConfigRouteMethods;
-  endpoint: string;
-  query: ConfigRouteQuery;
-  before?: (req: Request, res: Response, next: () => Promise<void>) => unknown;
-  after?: (req: Request, res: Response, next: () => Promise<void>) => unknown;
-};
-
-enum ErrorCodes {
-  paramLookupFailed = 1001,
-}
-
-export interface ErrorResponse {
-  errorCode: ErrorCodes;
-  requestId: string;
-  message?: string;
-  status: number;
-}
-
-export declare type ResquelAuth = {
-  username: string;
-  password: string;
-};
-
-export declare type ResquelConfig = {
-  port?: number;
-  db: Knex.Config<unknown>;
-  routes: ConfigRoute[];
-  auth?: ResquelAuth;
+const logger = {
+  error: debug('resquel:error'),
+  warn: debug('resquel:warn'),
+  info: debug('resquel:info'),
+  debug: debug('resquel:debug'),
 };
 
 export class Resquel {
@@ -65,13 +35,13 @@ export class Resquel {
 
   public async init() {
     const config = this.resquelConfig || ({} as ResquelConfig);
-    log(`routerSetup`);
+    logger.info(`routerSetup`);
     this.routerSetup(config.auth);
 
-    log(`createKnexConnections`);
+    logger.info(`createKnexConnections`);
     this.createKnexConnections();
 
-    log(`loadRoutes`);
+    logger.info(`loadRoutes`);
     this.loadRoutes();
   }
 
@@ -92,8 +62,8 @@ export class Resquel {
 
   public sendResponse(res: Response) {
     res.locals.status = res.locals.status || 200;
-    log(`[${res.locals.requestId}] Sending response w/ status ${res.locals.status}`);
-    debug(res.locals.result);
+    logger.info(`[${res.locals.requestId}] Sending response w/ status ${res.locals.status}`);
+    logger.debug(res.locals.result);
     res.status(res.locals.status).send(res.locals.result);
   }
 
@@ -104,13 +74,13 @@ export class Resquel {
   protected loadRoutes() {
     this.resquelConfig.routes.forEach((route, idx) => {
       const method = route.method.toLowerCase();
-      log(`${idx}) Register Route: ${route.method} ${route.endpoint}`);
-      debug(route);
+      logger.info(`${idx}) Register Route: ${route.method} ${route.endpoint}`);
+      logger.debug(route);
       this.router[method](route.endpoint, async (req: Request, res: Response) => {
         // For aiding tracing in logs, all logs related to the request should contain this id
         res.locals.requestId = req.query.requestId || uuid();
         res.locals.route = route;
-        log(`${idx}) ${route.method} ${route.endpoint} :: ${res.locals.requestId}`);
+        logger.info(`${idx}) ${route.method} ${route.endpoint} :: ${res.locals.requestId}`);
         if (route.before) {
           await new Promise((done) => {
             route.before(req, res, async () => {
@@ -133,11 +103,11 @@ export class Resquel {
             });
           }
           if (res.writableEnded) {
-            warn(`[${res.locals.requestId}] Response sent by route.after`);
+            logger.warn(`[${res.locals.requestId}] Response sent by route.after`);
             return;
           }
         }
-        log(`[${res.locals.requestId}] Sending result`);
+        logger.info(`[${res.locals.requestId}] Sending result`);
         this.sendResponse(res);
       });
     });
@@ -201,8 +171,8 @@ export class Resquel {
         if (typeof query[j] === 'string') {
           const val = _.get(req, query[j] as string);
           if (val === undefined) {
-            log(`[${res.locals.requestId}] lookup failed for param "${query[j]}"`);
-            debug(req.body);
+            logger.warn(`[${res.locals.requestId}] lookup failed for param "${query[j]}"`);
+            logger.debug(req.body);
             return ErrorCodes.paramLookupFailed;
           }
           params.push(val);
@@ -220,13 +190,13 @@ export class Resquel {
       try {
         result = this.resultProcess(knexClient, await knexClient.raw(queryString, params));
       } catch (err) {
-        error('QUERY FAILED');
-        error({
+        logger.error('QUERY FAILED');
+        logger.error({
           queryString,
           params,
           result,
         });
-        error(err);
+        logger.error(err);
         continue;
       }
       // Example result:
