@@ -4,7 +4,7 @@ A lightweight Express.js middleware library that converts SQL databases into RES
 
 > **Note:** This is a maintained fork focused on modernization and continued development. Originally inspired by the Form.io SQL connector concept.
 
-**Supported Databases:** Microsoft SQL Server, MySQL, and PostgreSQL
+**Supported Databases:** Microsoft SQL Server, MySQL (including MariaDB), and PostgreSQL
 
 ## How It Works
 
@@ -77,11 +77,11 @@ const app = express();
 
 Database configuration is passed through to [Knex.js](http://knexjs.org/#Installation-client). All Knex connection options are supported. Examples:
 
-**MySQL:**
+**MySQL / MariaDB:**
 
 ```javascript
 db: {
-  client: 'mysql',
+  client: 'mysql',  // Use 'mysql' for both MySQL and MariaDB
   connection: {
     host: 'localhost',
     database: 'mydb',
@@ -90,6 +90,8 @@ db: {
   }
 }
 ```
+
+> **Note:** MariaDB is fully supported using the `mysql` client. MariaDB is a drop-in replacement for MySQL and uses the same connection protocol.
 
 **PostgreSQL:**
 
@@ -259,6 +261,10 @@ const app = express();
 
 ## Troubleshooting
 
+### Using with MariaDB
+
+MariaDB is fully compatible with the MySQL client configuration. Simply use `client: 'mysql'` in your database configuration to connect to MariaDB servers. All MySQL configuration options and examples apply to MariaDB as well.
+
 ### Using with MySQL 8
 
 MySQL 8 introduced a new default authentication plugin (`caching_sha2_password`) which may not be compatible with older client libraries. The `mysql` package (v2.x) used by this library works best with the legacy `mysql_native_password` authentication method.
@@ -300,7 +306,7 @@ db: {
 
 See the [example/](example/) directory for working configurations with Docker Compose setups for:
 
-- MySQL (including MySQL 8 with legacy authentication)
+- MySQL / MariaDB (including MySQL 8 with legacy authentication)
 - PostgreSQL
 - Microsoft SQL Server
 

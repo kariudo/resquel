@@ -4,10 +4,12 @@ The following files are utilized with unit tests. They should be functional as w
 
 ## Configuration Files
 
-- **mysql.json** - Basic MySQL configuration
+- **mysql.json** - Basic MySQL/MariaDB configuration
 - **mysql8-legacy-auth.json** - MySQL 8 configuration with legacy authentication support (for connecting to MySQL 8 servers with caching_sha2_password)
 - **postgres.json** - PostgreSQL configuration
 - **mssql.json** - Microsoft SQL Server configuration
+
+> **Note:** All MySQL configuration files work with MariaDB as well. MariaDB uses the same `mysql` client configuration.
 
 ## MySQL 8 Legacy Authentication
 
