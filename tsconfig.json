@@ -10,17 +10,9 @@
     "sourceMap": true,
     "outDir": "./lib",
     "baseUrl": "./src",
-    "types": [
-      "node",
-      "mocha"
-    ],
+    "types": ["node", "mocha"],
     "incremental": true
   },
-  "include": [
-    "src",
-    "test"
-  ],
-  "exclude": [
-    "lib"
-  ]
+  "include": ["src", "test"],
+  "exclude": ["lib"]
 }

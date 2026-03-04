@@ -10,15 +10,9 @@
     "sourceMap": true,
     "outDir": "./lib",
     "baseUrl": "./src",
-    "types": [
-      "node"
-    ],
+    "types": ["node"],
     "incremental": true
   },
-  "include": [
-    "src"
-  ],
-  "exclude": [
-    "lib"
-  ]
+  "include": ["src"],
+  "exclude": ["lib"]
 }
