@@ -20,7 +20,12 @@ import type {
 
 import { ErrorCodes } from './types';
 
-const logger = {
+const logger: {
+  error: debug.Debugger;
+  warn: debug.Debugger;
+  info: debug.Debugger;
+  debug: debug.Debugger;
+} = {
   error: debug('resquel:error'),
   warn: debug('resquel:warn'),
   info: debug('resquel:info'),
@@ -31,7 +36,7 @@ export class Resquel {
   public knexClient: Knex;
   public readonly router: express.Router = express.Router();
 
-  constructor(private resquelConfig: ResquelConfig) {}
+  constructor(private resquelConfig: ResquelConfig) { }
 
   public async init() {
     const config = this.resquelConfig || ({} as ResquelConfig);
@@ -73,7 +78,7 @@ export class Resquel {
 
   protected loadRoutes() {
     this.resquelConfig.routes.forEach((route, idx) => {
-      const method = route.method.toLowerCase();
+      const method = route.method.toLowerCase() as 'get' | 'post' | 'put' | 'delete';
       logger.info(`${idx}) Register Route: ${route.method} ${route.endpoint}`);
       logger.debug(route);
       this.router[method](route.endpoint, async (req: Request, res: Response) => {
@@ -95,13 +100,11 @@ export class Resquel {
         }
         res.locals.result = result || [];
         if (route.after) {
-          if (route.after) {
-            await new Promise((done) => {
-              route.after(req, res, async () => {
-                done(null);
-              });
+          await new Promise((done) => {
+            route.after(req, res, async () => {
+              done(null);
             });
-          }
+          });
           if (res.writableEnded) {
             logger.warn(`[${res.locals.requestId}] Response sent by route.after`);
             return;
@@ -117,7 +120,7 @@ export class Resquel {
     routeQuery: ConfigRouteQuery,
     req: Request,
     knexClient: Knex,
-  ): Promise<ErrorCodes | Knex.Raw<unknown>> {
+  ): Promise<ErrorCodes | { rows: AnyKindOfDictionary[] | null }> {
     // Resolve route query into an array of prepared statements.
     // Example:
     //   ["SELECT * FROM customers WHERE id=?", "params.customerId"]
@@ -160,7 +163,7 @@ export class Resquel {
     res.locals.queries = res.locals.queries || [];
     const queries = res.locals.queries;
 
-    let result: AnyKindOfDictionary[] = null;
+    let result: AnyKindOfDictionary[] | null = null;
     for (let i = 0; i < routeQuery.length; i++) {
       const query = [...(routeQuery[i] as PreparedQuery)];
       const queryString = query.shift() as string;
@@ -193,11 +196,12 @@ export class Resquel {
         logger.error('QUERY FAILED');
         logger.error({
           queryString,
-          params,
+          params: params.map(p => typeof p === 'string' && p.length > 50 ? `${p.substring(0, 50)}...` : p),
           result,
         });
         logger.error(err);
-        continue;
+        // Return error instead of silently continuing
+        return ErrorCodes.paramLookupFailed;
       }
       // Example result:
       // [
