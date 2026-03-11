@@ -91,6 +91,16 @@ export class Resquel {
         res.locals.requestId = req.query.requestId || uuid();
         res.locals.route = route;
         logger.info(`${idx}) ${route.method} ${route.endpoint} :: ${res.locals.requestId}`);
+        if (route.tokens && route.tokens.length > 0) {
+          const providedToken =
+            (req.headers['x-api-token'] as string | undefined) ||
+            (req.query.token as string | undefined);
+          if (!providedToken || !route.tokens.includes(providedToken)) {
+            logger.warn(`[${res.locals.requestId}] Token validation failed for ${route.endpoint}`);
+            res.status(403).send({ status: 403, message: 'Forbidden' });
+            return;
+          }
+        }
         if (route.before) {
           await new Promise((done) => {
             route.before(req, res, async () => {

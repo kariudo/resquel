@@ -23,6 +23,7 @@ export type ConfigRoute = {
   method: ConfigRouteMethods;
   endpoint: string;
   query: ConfigRouteQuery;
+  tokens?: string[];
   before?: (req: Request, res: Response, next: () => Promise<void>) => unknown;
   after?: (req: Request, res: Response, next: () => Promise<void>) => unknown;
 };
