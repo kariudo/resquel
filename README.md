@@ -133,6 +133,27 @@ Routes are defined as an array of route configuration objects. Each route specif
 }
 ```
 
+### Route Tokens (Optional)
+
+You can optionally restrict a route with a `tokens` array of allowed API tokens.
+
+```javascript
+{
+  method: 'get',
+  endpoint: '/customer/:id',
+  tokens: ['3fa85f64-5717-4562-b3fc-2c963f66afa6'],
+  query: "SELECT * FROM customers WHERE id={{ params.id }}"
+
+}
+```
+
+If `tokens` is defined and non-empty, each request must provide a matching token using one of the following:
+
+- `x-api-token` request header
+- `token` query string parameter
+
+If no token is provided, or the provided token is not in the route's `tokens` array, the request is rejected with HTTP `403 Forbidden`.
+
 ### Query Formats
 
 Queries can be provided in three forms:
