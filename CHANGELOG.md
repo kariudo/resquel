@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/kariudo/resquel/compare/v1.0.1...v1.1.0) (2026-03-11)
+
+
+### Features
+
+* **routes:** add token validation for protected routes ([2e5895d](https://github.com/kariudo/resquel/commit/2e5895d4afd4bb50de3fb6bfe0b8ec6a6298d54a)), closes [#1](https://github.com/kariudo/resquel/issues/1)
+
 ## [1.0.1](https://github.com/kariudo/resquel/compare/v1.0.0...v1.0.1) (2026-03-04)
 
 
