@@ -1,5 +1,7 @@
 # Resquel
 
+[![npm version](https://img.shields.io/npm/v/%40kariudo/resquel?style=for-the-badge&logo=npm&color=cb3837)](https://www.npmjs.com/package/%40kariudo/resquel)
+
 A lightweight Express.js middleware library that converts SQL databases into REST APIs through simple route and query configuration.
 
 > **Note:** This is a maintained fork focused on modernization and continued development. Originally inspired by the Form.io SQL connector concept.
