@@ -250,17 +250,77 @@ export class Resquel {
   }
 
   protected resultProcess(knexClient: Knex, result: AnyKindOfDictionary): AnyKindOfDictionary[] {
-    switch (knexClient.client.config.client as ConnectionType) {
+    const client = knexClient.client.config.client as ConnectionType;
+
+    switch (client) {
       case 'postgresql':
         return (result as { rows: AnyKindOfDictionary[] }).rows;
       case 'mysql':
-        if ((result as AnyKindOfDictionary[]).length === 1) {
-          return result as AnyKindOfDictionary[];
-        }
-        if (result[0].affectedRows !== undefined) {
+      case 'mysql2': {
+        // mysql2 may return an array of results for multi-statement queries
+        // Format: [metadata_for_stmt1, [rows_from_stmt2], metadata_for_stmt3, ...]
+        // Or: [rows_from_single_select]
+        // Metadata arrays have properties like fieldCount, affectedRows
+        // Data arrays contain row objects with actual column data
+
+        if (!Array.isArray(result) || result.length === 0) {
           return [];
         }
-        return result[0] as AnyKindOfDictionary[];
+
+        logger.debug('mysql2 result:', { len: result.length });
+        const hasMetaProp = (value: unknown, prop: 'fieldCount' | 'affectedRows'): boolean => {
+          return !!value && (typeof value === 'object' || typeof value === 'function') && prop in value;
+        };
+
+        // If result has multiple elements, find the one that's a SELECT result (not metadata)
+        if (result.length > 1) {
+          for (let i = 0; i < result.length; i++) {
+            const elem = result[i] as any;
+            logger.debug(
+              `  [${i}] isArray=${Array.isArray(elem)}, hasFieldCount=${hasMetaProp(elem, 'fieldCount')}, hasAffectedRows=${hasMetaProp(elem, 'affectedRows')}`,
+            );
+            if (Array.isArray(elem)) {
+              // Check if this is a metadata array (has fieldCount, affectedRows, etc.)
+              if (hasMetaProp(elem, 'fieldCount') || hasMetaProp(elem, 'affectedRows')) {
+                logger.debug(`    -> skipping metadata array`);
+                // This is metadata, skip it
+                continue;
+              }
+              // This looks like a data array, return it
+              logger.debug(`    -> returning data array with ${elem.length} rows`);
+              return elem;
+            }
+          }
+          // Only found metadata or no data, return empty
+          logger.debug('  only found metadata, returning empty');
+          return [];
+        }
+
+        // Single element result
+        const firstElement = result[0] as any;
+
+        // If it's an array, check if it's data or metadata
+        if (Array.isArray(firstElement)) {
+          // Check if first element has metadata properties
+          if ('fieldCount' in firstElement || 'affectedRows' in firstElement) {
+            return [];
+          }
+          return firstElement;
+        }
+
+        // If it's a row object (has columns, no affectedRows), wrap in array
+        if (typeof firstElement === 'object' && !firstElement?.affectedRows && !('fieldCount' in firstElement)) {
+          return [firstElement];
+        }
+
+        // If it's metadata (affectedRows), return empty
+        if (firstElement?.affectedRows !== undefined || 'fieldCount' in firstElement) {
+          return [];
+        }
+
+        // Fallback
+        return [];
+      }
       default:
         return result as AnyKindOfDictionary[];
     }
@@ -289,6 +349,11 @@ export class Resquel {
         connection.requestTimeout = Number(requestTimeout);
       }
 
+      // Enable multipleStatements for mysql2 to support multi-statement queries
+      if (config.type === 'mysql2') {
+        connection.multipleStatements = true;
+      }
+
       return {
         port: config.port,
         auth: config.auth,
@@ -301,6 +366,15 @@ export class Resquel {
           query: this.normalizeRouteQuery(route.query),
         })),
       };
+    }
+
+    // For non-flat configs, also ensure multipleStatements is enabled for mysql2
+    const normalizedDb = config.db as Record<string, unknown>;
+    if (normalizedDb.client === 'mysql2' && normalizedDb.connection) {
+      const connection = normalizedDb.connection as Record<string, unknown>;
+      if (!connection.multipleStatements) {
+        connection.multipleStatements = true;
+      }
     }
 
     return {
