@@ -1,5 +1,6 @@
 import { faker } from '@faker-js/faker';
 import express from 'express';
+import knex from 'knex';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import mssqlConfig from '../example/mssql.json';
@@ -7,9 +8,11 @@ import { Resquel, type ResquelConfig } from '../src';
 
 const config: ResquelConfig = mssqlConfig;
 const app = express();
+type RouteHookType = 'POST' | 'GET' | 'PUT' | 'DELETE' | 'INDEX';
+type Customer = { id: number; firstName: string; lastName: string; email: string };
 
 describe('mssql tests', () => {
-  const called = {
+  const called: Record<RouteHookType, string[]> = {
     POST: [],
     GET: [],
     PUT: [],
@@ -20,7 +23,7 @@ describe('mssql tests', () => {
   describe('bootstrap routes', () => {
     it('add before/after route functions', () => {
       config.routes.forEach((route) => {
-        let type = route.method.toString().toUpperCase();
+        let type = route.method.toString().toUpperCase() as RouteHookType;
         if (type === 'GET' && route.endpoint.indexOf('/:') === -1) {
           type = 'INDEX';
         }
@@ -40,12 +43,29 @@ describe('mssql tests', () => {
   describe('bootstrap environment', () => {
     let resquel: Resquel;
     beforeAll(async () => {
+      const bootstrap = knex({
+        client: 'mssql',
+        connection: {
+          user: config.db.user,
+          password: config.db.password,
+          host: config.db.server,
+          database: 'master',
+          options: config.db.options as Record<string, unknown>,
+          requestTimeout: Number(config.db.requestTimeout),
+        },
+      });
+      await bootstrap.raw('DROP DATABASE IF EXISTS test');
+      await bootstrap.raw('CREATE DATABASE test');
+      await bootstrap.destroy();
+
       resquel = new Resquel(config);
       await resquel.init();
     });
 
     afterAll(() => {
-      app.use(resquel.router);
+      if (resquel) {
+        app.use(resquel.router);
+      }
     });
 
     it('clear the test db', async () => {
@@ -59,17 +79,23 @@ describe('mssql tests', () => {
     it('create the test table', async () => {
       await resquel.knexClient.raw(
         'USE test;' +
-          'CREATE TABLE customers (' +
-          'id int NOT NULL IDENTITY(1,1) PRIMARY KEY,' +
-          'firstName varchar(256) DEFAULT NULL,' +
-          'lastName varchar(256) DEFAULT NULL,' +
-          'email varchar(256) DEFAULT NULL' +
-          ');',
+        'CREATE TABLE customers (' +
+        'id int NOT NULL IDENTITY(1,1) PRIMARY KEY,' +
+        'firstName varchar(256) DEFAULT NULL,' +
+        'lastName varchar(256) DEFAULT NULL,' +
+        'email varchar(256) DEFAULT NULL' +
+        ');',
       );
     });
   });
 
-  let customer = null;
+  let customer: Customer | null = null;
+  const requireCustomer = (): Customer => {
+    if (!customer) {
+      throw new Error('Expected customer to be initialized');
+    }
+    return customer;
+  };
   describe('create tests', () => {
     it('create a customer', async () => {
       const res = await request(app)
@@ -125,8 +151,9 @@ describe('mssql tests', () => {
 
   describe('read tests', () => {
     it('read a customer', async () => {
+      const activeCustomer = requireCustomer();
       const res = await request(app)
-        .get(`/customer/${customer.id}`)
+        .get(`/customer/${activeCustomer.id}`)
         .expect('Content-Type', /json/)
         .expect(200);
 
@@ -150,8 +177,9 @@ describe('mssql tests', () => {
 
   describe('update tests', () => {
     it('update a customer', async () => {
+      const activeCustomer = requireCustomer();
       const res = await request(app)
-        .put(`/customer/${customer.id}`)
+        .put(`/customer/${activeCustomer.id}`)
         .send({
           data: {
             firstName: faker.person.firstName(),
@@ -164,7 +192,7 @@ describe('mssql tests', () => {
 
       const response = res.body;
       expect(response.rows).toHaveLength(1);
-      expect(response.rows[0].firstName).not.toBe(customer.firstName);
+      expect(response.rows[0].firstName).not.toBe(activeCustomer.firstName);
       customer = response.rows[0];
     });
 
@@ -183,12 +211,13 @@ describe('mssql tests', () => {
 
   describe('delete tests', () => {
     it('delete a customer', async () => {
+      const activeCustomer = requireCustomer();
       const res = await request(app)
-        .delete(`/customer/${customer.id}`)
+        .delete(`/customer/${activeCustomer.id}`)
         .expect('Content-Type', /json/)
         .expect(200);
 
-      expect(res.body).toEqual({});
+      expect(res.body).toEqual({ "rows": [] });
       customer = null;
     });
 
