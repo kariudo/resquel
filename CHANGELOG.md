@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/kariudo/resquel/compare/v1.1.0...v1.1.1) (2026-05-15)
+
+
+### Bug Fixes
+
+* **mysql2:** enhance result processing and enable multipleStatements support ([3e78616](https://github.com/kariudo/resquel/commit/3e78616cea0247155bfd5d27073da0413e7e57f1))
+
 # [1.1.0](https://github.com/kariudo/resquel/compare/v1.0.1...v1.1.0) (2026-03-11)
 
 
