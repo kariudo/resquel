@@ -57,11 +57,15 @@
     "@types/lodash": "^4.17.24",
     "@types/method-override": "^3.0.0",
     "@types/node": "^24.0.0",
+    "@types/pg": "^8",
     "@types/supertest": "^7.2.0",
     "@types/uuid": "^11.0.0",
     "@vitest/ui": "^2.1.8",
+    "mysql2": "^3.22.3",
+    "pg": "^8.20.0",
     "semantic-release": "^25.0.3",
     "supertest": "^7.2.2",
+    "tedious": "^19.2.1",
     "typescript": "^5.9.3",
     "vitest": "^2.1.8"
   }
