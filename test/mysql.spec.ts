@@ -1,22 +1,35 @@
 import { faker } from '@faker-js/faker';
 import express from 'express';
+import knex from 'knex';
 import request from 'supertest';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import mysqlConfig from '../example/mysql.json';
 import { Resquel, type ResquelConfig } from '../src';
 
 const config: ResquelConfig = mysqlConfig;
+// Use mysql2 instead of mysql for better modern MySQL/MariaDB auth support
+if ('type' in config) {
+  config.type = 'mysql2';
+}
 const app = express();
+type RouteHookType = 'POST' | 'GET' | 'PUT' | 'DELETE' | 'INDEX';
+type Customer = { id: number; firstName: string; lastName: string; email: string };
 
-describe('mysql tests', () => {
-  const called = {
+describe.sequential('mysql tests', () => {
+  const called: Record<RouteHookType, string[]> = {
     POST: [],
     GET: [],
     PUT: [],
     DELETE: [],
     INDEX: [],
   };
-  let customer = null;
+  let customer: Customer | null = null;
+  const requireCustomer = (): Customer => {
+    if (!customer) {
+      throw new Error('Expected customer to be initialized');
+    }
+    return customer;
+  };
 
   describe('bootstrap routes', () => {
     it('add before/after route functions', () => {
@@ -41,11 +54,21 @@ describe('mysql tests', () => {
   describe('bootstrap environment', () => {
     let resquel: Resquel;
     beforeAll(async () => {
+      const bootstrap = knex({
+        client: 'mysql2',
+        connection: {
+          user: config.db.user,
+          password: config.db.password,
+          host: config.db.server,
+          database: 'mysql',
+        },
+      });
+      await bootstrap.raw('DROP DATABASE IF EXISTS `test`');
+      await bootstrap.raw('CREATE DATABASE IF NOT EXISTS `test`');
+      await bootstrap.destroy();
+
       resquel = new Resquel(config);
       await resquel.init();
-    });
-
-    afterAll(() => {
       app.use(resquel.router);
     });
 
@@ -61,12 +84,12 @@ describe('mysql tests', () => {
     it('create the test table', async () => {
       await resquel.knexClient.raw(
         'CREATE TABLE `customers` (' +
-          '`id` int(16) unsigned NOT NULL AUTO_INCREMENT,' +
-          '`firstName` varchar(256) COLLATE latin1_general_ci DEFAULT NULL,' +
-          '`lastName` varchar(256) COLLATE latin1_general_ci DEFAULT NULL,' +
-          '`email` varchar(256) COLLATE latin1_general_ci DEFAULT NULL,' +
-          'PRIMARY KEY (`id`)' +
-          ') ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci',
+        '`id` int(16) unsigned NOT NULL AUTO_INCREMENT,' +
+        '`firstName` varchar(256) COLLATE latin1_general_ci DEFAULT NULL,' +
+        '`lastName` varchar(256) COLLATE latin1_general_ci DEFAULT NULL,' +
+        '`email` varchar(256) COLLATE latin1_general_ci DEFAULT NULL,' +
+        'PRIMARY KEY (`id`)' +
+        ') ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci',
       );
     });
   });
@@ -86,8 +109,16 @@ describe('mysql tests', () => {
         .expect(200);
 
       const response = res.body;
-      expect(response.rows).toHaveLength(1);
-      customer = response.rows[0];
+      expect(response.rows).toHaveLength(2);
+      expect(response.rows[0].affectedRows).toBe(1);
+      expect(response.rows[0].insertId).toBeGreaterThan(0);
+
+      const lookup = await request(app)
+        .get(`/customer/${response.rows[0].insertId}`)
+        .expect('Content-Type', /json/)
+        .expect(200);
+      expect(lookup.body.rows).toHaveLength(1);
+      customer = lookup.body.rows[0];
     });
 
     it('the before handler was called first for the route', () => {
@@ -126,8 +157,9 @@ describe('mysql tests', () => {
 
   describe('read tests', () => {
     it('read a customer', async () => {
+      const activeCustomer = requireCustomer();
       const res = await request(app)
-        .get(`/customer/${customer.id}`)
+        .get(`/customer/${activeCustomer.id}`)
         .expect('Content-Type', /json/)
         .expect(200);
 
@@ -151,8 +183,9 @@ describe('mysql tests', () => {
 
   describe('update tests', () => {
     it('update a customer', async () => {
+      const activeCustomer = requireCustomer();
       const res = await request(app)
-        .put(`/customer/${customer.id}`)
+        .put(`/customer/${activeCustomer.id}`)
         .send({
           data: {
             firstName: faker.person.firstName(),
@@ -164,9 +197,17 @@ describe('mysql tests', () => {
         .expect(200);
 
       const response = res.body;
-      expect(response.rows).toHaveLength(1);
-      expect(response.rows[0].firstName).not.toBe(customer.firstName);
-      customer = response.rows[0];
+      expect(response.rows).toHaveLength(2);
+      expect(response.rows[0].affectedRows).toBe(1);
+
+      const lookup = await request(app)
+        .get(`/customer/${activeCustomer.id}`)
+        .expect('Content-Type', /json/)
+        .expect(200);
+
+      expect(lookup.body.rows).toHaveLength(1);
+      expect(lookup.body.rows[0].firstName).not.toBe(activeCustomer.firstName);
+      customer = lookup.body.rows[0];
     });
 
     it('the before handler was called first for the route', () => {
@@ -184,8 +225,9 @@ describe('mysql tests', () => {
 
   describe('delete tests', () => {
     it('delete a customer', async () => {
+      const activeCustomer = requireCustomer();
       const res = await request(app)
-        .delete(`/customer/${customer.id}`)
+        .delete(`/customer/${activeCustomer.id}`)
         .expect('Content-Type', /json/)
         .expect(200);
 
