@@ -333,6 +333,34 @@ See the [example/](example/) directory for working configurations with Docker Co
 - PostgreSQL
 - Microsoft SQL Server
 
+## Running Tests
+
+Resquel uses Vitest for integration tests across all supported databases.
+
+Run the full test suite:
+
+```bash
+yarn test
+```
+
+Run a single database suite:
+
+```bash
+yarn test:mysql
+yarn test:postgresql
+yarn test:mssql
+```
+
+Each database test suite is aligned with its matching config file in the `example/` directory:
+
+- `yarn test:mysql` uses `example/mysql.json`
+- `yarn test:postgresql` uses `example/postgres.json`
+- `yarn test:mssql` uses `example/mssql.json`
+
+The tests perform database bootstrap steps defined in the suite itself, including creating or resetting the test database and schema as needed before exercising CRUD routes.
+
+Because setup is destructive (drop/create operations), run tests only against disposable test databases.
+
 ## License
 
 GPL-3.0 - see [LICENSE.md](LICENSE.md)
