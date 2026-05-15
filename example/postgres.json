@@ -15,7 +15,7 @@
     {
       "method": "post",
       "endpoint": "/customer",
-      "query": "INSERT INTO customers (firstName, lastName, email) VALUES ('{{ body.data.firstName }}', '{{ body.data.lastName }}', '{{ body.data.email }}') RETURNING *;"
+      "query": "INSERT INTO customers (firstName, lastName, email) VALUES ({{ body.data.firstName }}, {{ body.data.lastName }}, {{ body.data.email }}) RETURNING *;"
     },
     {
       "method": "get",
@@ -25,7 +25,7 @@
     {
       "method": "put",
       "endpoint": "/customer/:id",
-      "query": "UPDATE customers SET firstName='{{ body.data.firstName }}', lastName='{{ body.data.lastName }}', email='{{ body.data.email }}' WHERE id={{ params.id }} RETURNING *"
+      "query": "UPDATE customers SET firstName={{ body.data.firstName }}, lastName={{ body.data.lastName }}, email={{ body.data.email }} WHERE id={{ params.id }} RETURNING *"
     },
     {
       "method": "delete",
